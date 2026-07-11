@@ -202,7 +202,7 @@ bool expectWindowHandle(const ExprPackageValue& value, WindowHandle*& outHandle,
         return false;
     }
 
-    if (std::string_view(handle.package_namespace) != "mog" ||
+    if (std::string_view(handle.package_namespace) != "github" ||
         std::string_view(handle.package_name) != "window" ||
         std::string_view(handle.type_name) != "WindowHandle") {
         setError(outError, "expected github:window WindowHandle");
@@ -243,7 +243,7 @@ bool expectEventHandle(const ExprPackageValue& value, EventHandle*& outHandle,
         return false;
     }
 
-    if (std::string_view(handle.package_namespace) != "mog" ||
+    if (std::string_view(handle.package_namespace) != "github" ||
         std::string_view(handle.package_name) != "window" ||
         std::string_view(handle.type_name) != "EventHandle") {
         setError(outError, "expected github:window EventHandle");
