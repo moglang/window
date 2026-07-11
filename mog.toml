@@ -1,0 +1,20 @@
+kind = "native"
+module = "github.com/moglang/window"
+import_name = "window"
+namespace = "github"
+name = "window"
+version = "0.1.0"
+license = "MIT"
+abi_version = 3
+mog_runtime = "^0.1.0"
+author = "Mog contributors"
+description = "Official SDL2-backed native windowing package for Mog."
+repository = "https://github.com/moglang/window"
+dependencies = []
+
+[native]
+build = "cmake"
+targets = ["linux-x86_64-gnu", "linux-arm64-gnu", "macos-arm64", "macos-x86_64"]
+
+[system-dependencies]
+sdl2 = { version = ">=2.0.0", required = true }

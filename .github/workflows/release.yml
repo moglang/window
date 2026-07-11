@@ -1,0 +1,105 @@
+name: Release native artifacts
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x86_64-gnu
+          - os: macos-latest
+            target: macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2 (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev
+      - name: Install SDL2 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2
+      - name: Build package
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+      - name: Bundle native artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "dist/${{ matrix.target }}"
+          cp mog.toml package.api.mog "dist/${{ matrix.target }}/"
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            cp package.so "dist/${{ matrix.target }}/package.so"
+          else
+            cp package.dylib "dist/${{ matrix.target }}/package.dylib"
+          fi
+          printf '%s\n' '${{ matrix.target }}' > "dist/${{ matrix.target }}/publish-target.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: window-${{ matrix.target }}
+          path: dist/${{ matrix.target }}
+
+  publish:
+    name: Sign and publish registry artifacts
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Checkout Mog runtime
+        uses: actions/checkout@v4
+        with:
+          repository: moglang/mog
+          path: mog
+      - name: Build Mog publisher
+        working-directory: mog
+        run: ./build.sh --release
+      - name: Publish signed artifacts
+        shell: bash
+        env:
+          MOG_PUBLISH_REGISTRY_INDEX: ${{ secrets.MOG_PUBLISH_REGISTRY_INDEX }}
+          MOG_PUBLISH_TOKEN: ${{ secrets.MOG_PUBLISH_TOKEN }}
+          MOG_PUBLISH_SIGNING_KEY: ${{ secrets.MOG_PUBLISH_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          : "${MOG_PUBLISH_REGISTRY_INDEX:?Configure the registry index secret.}"
+          : "${MOG_PUBLISH_TOKEN:?Configure the registry token secret.}"
+          : "${MOG_PUBLISH_SIGNING_KEY:?Configure the registry signing key secret.}"
+          workspace="$RUNNER_TEMP/publish-workspace"
+          key="$RUNNER_TEMP/registry-key.toml"
+          mkdir -p "$workspace"
+          printf '%s\n' "$MOG_PUBLISH_SIGNING_KEY" > "$key"
+          cat > "$workspace/mog.toml" <<MANIFEST
+          kind = "project"
+          name = "window-release"
+          version = "0.1.0"
+          description = "Signed registry release workspace."
+
+          [registries.release]
+          index = "$MOG_PUBLISH_REGISTRY_INDEX"
+          MANIFEST
+          (
+            cd "$workspace"
+            "$GITHUB_WORKSPACE/mog/build/interpreter" registry login release --token "$MOG_PUBLISH_TOKEN"
+            for bundle in "$GITHUB_WORKSPACE"/dist/window-*; do
+              target="$(tr -d '\r\n' < "$bundle/publish-target.txt")"
+              "$GITHUB_WORKSPACE/mog/build/interpreter" publish --registry release --signing-key "$key" --require-clean-git --tag "${GITHUB_REF_NAME}" --target "$target" --native-artifact-dir "$bundle" "$GITHUB_WORKSPACE"
+            done
+          )

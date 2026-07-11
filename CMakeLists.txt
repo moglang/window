@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.16)
+project(mog_window LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(SDL2 QUIET IMPORTED_TARGET sdl2)
+endif()
+
+if(TARGET PkgConfig::SDL2)
+    set(MOG_WINDOW_SDL_TARGET PkgConfig::SDL2)
+else()
+    find_package(SDL2 REQUIRED)
+    if(TARGET SDL2::SDL2)
+        set(MOG_WINDOW_SDL_TARGET SDL2::SDL2)
+    else()
+        set(MOG_WINDOW_SDL_TARGET ${SDL2_LIBRARIES})
+    endif()
+endif()
+
+add_library(mog_window MODULE package.cpp)
+target_include_directories(mog_window PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${SDL2_INCLUDE_DIRS})
+target_link_libraries(mog_window PRIVATE ${MOG_WINDOW_SDL_TARGET})
+set_target_properties(mog_window PROPERTIES PREFIX "" OUTPUT_NAME "package")
