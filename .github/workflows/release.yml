@@ -43,7 +43,7 @@ jobs:
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             cp build/package.so "dist/${{ matrix.target }}/package.so"
           else
-            cp build/package.dylib "dist/${{ matrix.target }}/package.dylib"
+            cp build/package.so "dist/${{ matrix.target }}/package.dylib"
           fi
           tar -C dist -czf "window-${{ matrix.target }}.tar.gz" "${{ matrix.target }}"
       - uses: actions/upload-artifact@v4
