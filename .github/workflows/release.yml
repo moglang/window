@@ -41,9 +41,9 @@ jobs:
           mkdir -p "dist/${{ matrix.target }}"
           cp mog.toml package.api.mog "dist/${{ matrix.target }}/"
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            cp package.so "dist/${{ matrix.target }}/package.so"
+            cp build/package.so "dist/${{ matrix.target }}/package.so"
           else
-            cp package.dylib "dist/${{ matrix.target }}/package.dylib"
+            cp build/package.dylib "dist/${{ matrix.target }}/package.dylib"
           fi
           tar -C dist -czf "window-${{ matrix.target }}.tar.gz" "${{ matrix.target }}"
       - uses: actions/upload-artifact@v4
