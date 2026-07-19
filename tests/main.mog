@@ -1,0 +1,4 @@
+const window = @import("github.com/moglang/window")
+if (window.PACKAGE_ID != "github.com/moglang/window") error("package identifier")
+if (window.KEY_ESCAPE == 0i64) error("escape key constant")
+if (window.KEY_SPACE == 0i64) error("space key constant")

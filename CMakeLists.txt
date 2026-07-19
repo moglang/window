@@ -21,7 +21,7 @@ else()
     endif()
 endif()
 
-add_library(mog_window MODULE package.cpp)
+add_library(mog_window MODULE src/package.cpp)
 target_include_directories(mog_window PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${SDL2_INCLUDE_DIRS})
 target_link_libraries(mog_window PRIVATE ${MOG_WINDOW_SDL_TARGET})
 set_target_properties(mog_window PROPERTIES PREFIX "" OUTPUT_NAME "package")
